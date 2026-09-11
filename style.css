@@ -31,7 +31,7 @@
         position: relative;
         width: 100%;
         max-width: 430px;
-        aspect-ratio: 4 / 5;
+        aspect-ratio: 9 / 16;
         margin: 20px auto;
         overflow: hidden;
         border-radius: 20px;
@@ -44,8 +44,8 @@
         left: 50%;
         z-index: 1;
         width: 100%;
-        height: auto;
-        aspect-ratio: 16 / 9;
+        height: 100%;
+        aspect-ratio: 9 / 16;
         object-fit: contain;
         background: #000;
         transform: translate(-50%, -50%);
@@ -131,7 +131,7 @@
         display: none;
         width: min(100%, 300px);
         max-width: 300px;
-        aspect-ratio: 4 / 5;
+        aspect-ratio: 9 / 16;
         margin: 20px auto;
     }
 
@@ -209,7 +209,7 @@
 
         .camera-box {
             flex: 0 0 auto;
-            aspect-ratio: 4 / 5;
+            aspect-ratio: 9 / 16;
             max-width: none;
             margin: 0;
             border-radius: 0;
