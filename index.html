@@ -224,24 +224,10 @@ captureBtn.addEventListener("click", async function () {
 
     captureBtn.disabled = true;
 
-    const width = 1080;
-    const height = 1920;
+    const width = video.videoWidth;
+    const height = video.videoHeight;
     const sourceWidth = video.videoWidth;
     const sourceHeight = video.videoHeight;
-    const sourceAspect = sourceWidth / sourceHeight;
-    const targetAspect = width / height;
-    let cropWidth = sourceWidth;
-    let cropHeight = sourceHeight;
-    let cropX = 0;
-    let cropY = 0;
-
-    if (sourceAspect > targetAspect) {
-        cropWidth = sourceHeight * targetAspect;
-        cropX = (sourceWidth - cropWidth) / 2;
-    } else {
-        cropHeight = sourceWidth / targetAspect;
-        cropY = (sourceHeight - cropHeight) / 2;
-    }
 
     canvas.width = width;
     canvas.height = height;
@@ -252,10 +238,10 @@ captureBtn.addEventListener("click", async function () {
         ctx.save();
         ctx.translate(width, 0);
         ctx.scale(-1, 1);
-        ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, width, height);
+        ctx.drawImage(video, 0, 0, sourceWidth, sourceHeight);
         ctx.restore();
     } else {
-        ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, width, height);
+        ctx.drawImage(video, 0, 0, sourceWidth, sourceHeight);
     }
 
     const frame = document.getElementById("frame");
