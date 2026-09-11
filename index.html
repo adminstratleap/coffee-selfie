@@ -174,15 +174,15 @@ async function startCamera() {
         if (track && typeof track.getCapabilities === "function") {
             const capabilities = track.getCapabilities();
 
-            if (capabilities.zoom && typeof track.applyConstraints === "function") {
-                const zoom = Math.max(
-                    capabilities.zoom.min,
-                    Math.min(0.5, capabilities.zoom.max)
-                );
-
+            if (
+                capabilities.zoom &&
+                capabilities.zoom.min <= 0.5 &&
+                capabilities.zoom.max >= 0.5 &&
+                typeof track.applyConstraints === "function"
+            ) {
                 try {
                     await track.applyConstraints({
-                        advanced: [{ zoom: zoom }]
+                        advanced: [{ zoom: 0.5 }]
                     });
                 } catch (zoomError) {
                     console.warn("Camera zoom is not supported", zoomError);
@@ -254,9 +254,10 @@ captureBtn.addEventListener("click", async function () {
     const height = 1350;
     const sourceWidth = video.videoWidth;
     const sourceHeight = video.videoHeight;
-    const videoAspect = 16 / 9;
-    const drawWidth = width;
-    const drawHeight = drawWidth / videoAspect;
+    const videoAspect = sourceWidth / sourceHeight;
+    const scale = Math.min(width / sourceWidth, height / sourceHeight);
+    const drawWidth = sourceWidth * scale;
+    const drawHeight = sourceHeight * scale;
     const drawX = (width - drawWidth) / 2;
     const drawY = height * 0.41 - drawHeight / 2;
 
