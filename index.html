@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+      <link rel="stylesheet" href="style.css">
+
+<title>Coffee Selfie</title>
+
+</head>
+
+<body>
+
+<div class="container">
+    <div class="camera-box" id="cameraBox">
+
+        <video id="video"
+               autoplay
+               playsinline></video>
+
+        <img src="My Coffee.png"
+             class="frame"
+             id="frame">
+
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <img id="result">
+
+    <button id="captureBtn">
+        TAKE PHOTO
+    </button>
+
+    <button id="retakeBtn">
+        TAKE AGAIN
+    </button>
+
+    <button id="downloadBtn">
+        SAVE PHOTO
+    </button>
+
+    <button id="shareBtn">
+        SHARE
+    </button>
+
+    <div class="message" id="message"></div>
+
+</div>
+
+
+<script>
+
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const result = document.getElementById("result");
+const cameraBox = document.getElementById("cameraBox");
+
+const captureBtn = document.getElementById("captureBtn");
+const retakeBtn = document.getElementById("retakeBtn");
+const downloadBtn = document.getElementById("downloadBtn");
+const shareBtn = document.getElementById("shareBtn");
+
+const message = document.getElementById("message");
+
+let stream;
+let finalImage = null;
+let cameraReady = false;
+
+function showCaptureState() {
+
+    cameraBox.style.display = "none";
+    result.style.display = "block";
+
+    captureBtn.style.display = "none";
+    retakeBtn.style.display = "block";
+    downloadBtn.style.display = "block";
+    shareBtn.style.display = "block";
+
+}
+
+function showCameraState() {
+
+    cameraBox.style.display = "block";
+    result.style.display = "none";
+
+    captureBtn.style.display = "block";
+    captureBtn.disabled = !cameraReady;
+    retakeBtn.style.display = "none";
+    downloadBtn.style.display = "none";
+    shareBtn.style.display = "none";
+
+}
+
+// ================================
+// START CAMERA
+// ================================
+
+async function startCamera() {
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+
+        message.innerText =
+            "Camera needs a secure connection. Open this page on HTTPS or through localhost.";
+
+        return false;
+    }
+
+    try {
+
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+
+        stream = await navigator.mediaDevices.getUserMedia({
+
+            video: {
+                facingMode: "user",
+                width: {
+                    ideal: 1080
+                },
+                height: {
+                    ideal: 1920
+                }
+            },
+
+            audio: false
+        });
+
+        video.srcObject = stream;
+        video.muted = true;
+
+        await video.play();
+
+        cameraReady = true;
+        captureBtn.disabled = false;
+
+        message.innerText =
+            "Camera ready ☕";
+
+        return true;
+
+    } catch (error) {
+
+        console.error(error);
+        cameraReady = false;
+        captureBtn.disabled = false;
+
+        if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
+            message.innerText =
+                "Please allow camera access in your browser settings, then try again.";
+        } else if (error.name === "NotFoundError") {
+            message.innerText =
+                "No camera was found on this device.";
+        } else if (error.name === "NotReadableError") {
+            message.innerText =
+                "Your camera is being used by another app. Close it and try again.";
+        } else {
+            message.innerText =
+                "The camera could not be opened. Please check your browser permissions.";
+        }
+
+        return false;
+
+    }
+
+}
+
+
+// ================================
+// TAKE PHOTO
+// ================================
+
+captureBtn.addEventListener("click", async function () {
+
+    if (!cameraReady || !stream || video.readyState < 2) {
+        const started = await startCamera();
+        if (!started) {
+            return;
+        }
+    }
+
+    captureBtn.disabled = false;
+
+    if (!video.videoWidth || !video.videoHeight) {
+        message.innerText =
+            "Camera is not ready yet. Please wait a moment.";
+        return;
+    }
+
+    captureBtn.disabled = true;
+
+    const width = video.videoWidth;
+    const height = video.videoHeight;
+
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext("2d");
+
+    ctx.save();
+    ctx.translate(width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0, width, height);
+    ctx.restore();
+
+    const frame = document.getElementById("frame");
+
+    if (frame && frame.complete) {
+        ctx.drawImage(frame, 0, 0, width, height);
+    }
+
+    finalImage = canvas.toDataURL("image/jpeg", 0.95);
+    result.src = finalImage;
+
+    showCaptureState();
+
+    message.innerText =
+        "Your coffee moment is ready! ☕";
+
+});
+
+
+// ================================
+// RETAKE
+// ================================
+
+retakeBtn.addEventListener("click", function () {
+
+    showCameraState();
+
+    message.innerText =
+        "Ready for another shot? ☕";
+
+});
+
+
+// ================================
+// DOWNLOAD / SAVE
+// ================================
+
+downloadBtn.addEventListener("click", function () {
+
+    const link = document.createElement("a");
+
+    link.href = finalImage;
+
+    link.download =
+        "my-coffee-moment.jpg";
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+});
+
+
+// ================================
+// SHARE
+// ================================
+
+shareBtn.addEventListener("click", async function () {
+
+    try {
+
+        // Convert image to file
+
+        const response =
+            await fetch(finalImage);
+
+        const blob =
+            await response.blob();
+
+        const file =
+            new File(
+                [blob],
+                "coffee-selfie.jpg",
+                {
+                    type: "image/jpeg"
+                }
+            );
+
+
+        // Native mobile share
+
+        if (
+            navigator.share &&
+            navigator.canShare &&
+            navigator.canShare({
+                files: [file]
+            })
+        ) {
+
+            await navigator.share({
+
+                title: "My Coffee Moment ☕",
+
+                text:
+                    "Enjoying my coffee moment! ☕",
+
+                files: [file]
+
+            });
+
+        }
+
+        else {
+
+            message.innerText =
+                "Sharing is not supported on this browser. Please save the photo and share it manually.";
+
+        }
+
+    } catch (error) {
+
+        console.log(error);
+
+    }
+
+});
+
+
+showCameraState();
+startCamera();
+
+</script>
+
+</body>
+</html>
+```
