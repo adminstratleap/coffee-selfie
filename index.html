@@ -19,7 +19,7 @@
                autoplay
                playsinline></video>
 
-        <img src="My Coffee(1).png"
+        <img src="Frame-03.png"
              class="frame"
              id="frame">
 
@@ -259,7 +259,7 @@ captureBtn.addEventListener("click", async function () {
     const drawWidth = sourceWidth * scale;
     const drawHeight = sourceHeight * scale;
     const drawX = (width - drawWidth) / 2;
-    const drawY = height * 0.41 - drawHeight / 2;
+    const drawY = (height - drawHeight) / 2;
 
     canvas.width = width;
     canvas.height = height;
