@@ -40,12 +40,12 @@
 
     video {
         position: absolute;
-        top: 41%;
+        top: 50%;
         left: 50%;
         z-index: 1;
-        width: auto;
-        height: 100%;
-        aspect-ratio: 9 / 16;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16 / 9;
         object-fit: contain;
         background: #000;
         transform: translate(-50%, -50%);
