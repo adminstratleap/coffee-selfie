@@ -147,11 +147,14 @@ async function startCamera() {
 
             video: {
                 facingMode: facingMode,
+                aspectRatio: {
+                    ideal: 16 / 9
+                },
                 width: {
-                    ideal: 1080
+                    ideal: 1920
                 },
                 height: {
-                    ideal: 1920
+                    ideal: 1080
                 }
             },
 
@@ -160,7 +163,9 @@ async function startCamera() {
 
         video.srcObject = stream;
         video.muted = true;
-        video.style.transform = facingMode === "user" ? "scaleX(-1)" : "none";
+        video.style.transform = facingMode === "user"
+            ? "translate(-50%, -50%) scaleX(-1)"
+            : "translate(-50%, -50%)";
 
         await video.play();
 
@@ -190,7 +195,7 @@ async function startCamera() {
         switchCameraBtn.disabled = false;
 
         message.innerText =
-            "Camera ready ☕";
+            "Camera ready ";
 
         return true;
 
@@ -246,14 +251,14 @@ captureBtn.addEventListener("click", async function () {
     captureBtn.disabled = true;
 
     const width = 1080;
-    const height = 1920;
+    const height = 1350;
     const sourceWidth = video.videoWidth;
     const sourceHeight = video.videoHeight;
-    const scale = Math.min(width / sourceWidth, height / sourceHeight);
-    const drawWidth = sourceWidth * scale;
-    const drawHeight = sourceHeight * scale;
+    const videoAspect = 16 / 9;
+    const drawWidth = width;
+    const drawHeight = drawWidth / videoAspect;
     const drawX = (width - drawWidth) / 2;
-    const drawY = (height - drawHeight) / 2;
+    const drawY = height * 0.41 - drawHeight / 2;
 
     canvas.width = width;
     canvas.height = height;
@@ -275,6 +280,7 @@ captureBtn.addEventListener("click", async function () {
     const frame = document.getElementById("frame");
 
     if (frame && frame.complete) {
+        ctx.globalCompositeOperation = "source-over";
         ctx.drawImage(frame, 0, 0, width, height);
     }
 
