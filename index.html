@@ -27,11 +27,32 @@
 
     <canvas id="canvas"></canvas>
 
-    <img id="result">
+    <div id="resultViewer">
+        <img id="result"
+             alt="Your coffee selfie"
+             role="button"
+             tabindex="0"
+             title="View photo full screen">
+        <button id="fullscreenBackBtn"
+                type="button"
+                aria-label="Close full screen"
+                title="Close full screen">
+            ←
+        </button>
+    </div>
 
-    <button id="captureBtn">
-        TAKE PHOTO
-    </button>
+    <div class="camera-controls" id="cameraControls">
+        <button id="captureBtn">
+            TAKE PHOTO
+        </button>
+
+        <button id="switchCameraBtn"
+                type="button"
+                aria-label="Switch camera"
+                title="Switch camera">
+            ↻
+        </button>
+    </div>
 
     <button id="retakeBtn">
         TAKE AGAIN
@@ -55,9 +76,13 @@
 const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const result = document.getElementById("result");
+const resultViewer = document.getElementById("resultViewer");
+const fullscreenBackBtn = document.getElementById("fullscreenBackBtn");
 const cameraBox = document.getElementById("cameraBox");
+const cameraControls = document.getElementById("cameraControls");
 
 const captureBtn = document.getElementById("captureBtn");
+const switchCameraBtn = document.getElementById("switchCameraBtn");
 const retakeBtn = document.getElementById("retakeBtn");
 const downloadBtn = document.getElementById("downloadBtn");
 const shareBtn = document.getElementById("shareBtn");
@@ -67,13 +92,15 @@ const message = document.getElementById("message");
 let stream;
 let finalImage = null;
 let cameraReady = false;
+let facingMode = "user";
 
 function showCaptureState() {
 
     cameraBox.style.display = "none";
-    result.style.display = "block";
+    resultViewer.style.display = "flex";
 
     captureBtn.style.display = "none";
+        cameraControls.style.display = "none";
     retakeBtn.style.display = "block";
     downloadBtn.style.display = "block";
     shareBtn.style.display = "block";
@@ -83,10 +110,13 @@ function showCaptureState() {
 function showCameraState() {
 
     cameraBox.style.display = "block";
-    result.style.display = "none";
+    resultViewer.style.display = "none";
 
+    cameraControls.style.display = "flex";
     captureBtn.style.display = "block";
     captureBtn.disabled = !cameraReady;
+    switchCameraBtn.style.display = "block";
+    switchCameraBtn.disabled = !cameraReady;
     retakeBtn.style.display = "none";
     downloadBtn.style.display = "none";
     shareBtn.style.display = "none";
@@ -116,7 +146,7 @@ async function startCamera() {
         stream = await navigator.mediaDevices.getUserMedia({
 
             video: {
-                facingMode: "user",
+                facingMode: facingMode,
                 width: {
                     ideal: 1080
                 },
@@ -130,11 +160,13 @@ async function startCamera() {
 
         video.srcObject = stream;
         video.muted = true;
+        video.style.transform = facingMode === "user" ? "scaleX(-1)" : "none";
 
         await video.play();
 
         cameraReady = true;
         captureBtn.disabled = false;
+        switchCameraBtn.disabled = false;
 
         message.innerText =
             "Camera ready ☕";
@@ -146,6 +178,7 @@ async function startCamera() {
         console.error(error);
         cameraReady = false;
         captureBtn.disabled = false;
+        switchCameraBtn.disabled = false;
 
         if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
             message.innerText =
@@ -191,19 +224,39 @@ captureBtn.addEventListener("click", async function () {
 
     captureBtn.disabled = true;
 
-    const width = video.videoWidth;
-    const height = video.videoHeight;
+    const width = 1080;
+    const height = 1920;
+    const sourceWidth = video.videoWidth;
+    const sourceHeight = video.videoHeight;
+    const sourceAspect = sourceWidth / sourceHeight;
+    const targetAspect = width / height;
+    let cropWidth = sourceWidth;
+    let cropHeight = sourceHeight;
+    let cropX = 0;
+    let cropY = 0;
+
+    if (sourceAspect > targetAspect) {
+        cropWidth = sourceHeight * targetAspect;
+        cropX = (sourceWidth - cropWidth) / 2;
+    } else {
+        cropHeight = sourceWidth / targetAspect;
+        cropY = (sourceHeight - cropHeight) / 2;
+    }
 
     canvas.width = width;
     canvas.height = height;
 
     const ctx = canvas.getContext("2d");
 
-    ctx.save();
-    ctx.translate(width, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(video, 0, 0, width, height);
-    ctx.restore();
+    if (facingMode === "user") {
+        ctx.save();
+        ctx.translate(width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, width, height);
+        ctx.restore();
+    } else {
+        ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, width, height);
+    }
 
     const frame = document.getElementById("frame");
 
@@ -218,6 +271,23 @@ captureBtn.addEventListener("click", async function () {
 
     message.innerText =
         "Your coffee moment is ready! ☕";
+
+});
+
+
+// ================================
+// SWITCH CAMERA
+// ================================
+
+switchCameraBtn.addEventListener("click", async function () {
+
+    facingMode = facingMode === "user" ? "environment" : "user";
+    cameraReady = false;
+    captureBtn.disabled = true;
+    switchCameraBtn.disabled = true;
+    message.innerText = "Switching camera...";
+
+    await startCamera();
 
 });
 
@@ -318,6 +388,41 @@ shareBtn.addEventListener("click", async function () {
 
         console.log(error);
 
+    }
+
+});
+
+
+// ================================
+// FULL-SCREEN RESULT
+// ================================
+
+async function showResultFullScreen() {
+
+    if (resultViewer.requestFullscreen) {
+        await resultViewer.requestFullscreen();
+        return;
+    }
+
+    window.open(finalImage, "_blank");
+
+}
+
+result.addEventListener("click", showResultFullScreen);
+
+result.addEventListener("keydown", function (event) {
+
+    if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        showResultFullScreen();
+    }
+
+});
+
+fullscreenBackBtn.addEventListener("click", async function () {
+
+    if (document.fullscreenElement) {
+        await document.exitFullscreen();
     }
 
 });
