@@ -123,6 +123,7 @@
         display: none;
         width: min(100%, 300px);
         max-width: 300px;
+        aspect-ratio: 9 / 16;
         margin: 20px auto;
     }
 

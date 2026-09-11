@@ -164,6 +164,27 @@ async function startCamera() {
 
         await video.play();
 
+        const track = stream.getVideoTracks()[0];
+
+        if (track && typeof track.getCapabilities === "function") {
+            const capabilities = track.getCapabilities();
+
+            if (capabilities.zoom && typeof track.applyConstraints === "function") {
+                const zoom = Math.max(
+                    capabilities.zoom.min,
+                    Math.min(0.5, capabilities.zoom.max)
+                );
+
+                try {
+                    await track.applyConstraints({
+                        advanced: [{ zoom: zoom }]
+                    });
+                } catch (zoomError) {
+                    console.warn("Camera zoom is not supported", zoomError);
+                }
+            }
+        }
+
         cameraReady = true;
         captureBtn.disabled = false;
         switchCameraBtn.disabled = false;
@@ -224,24 +245,31 @@ captureBtn.addEventListener("click", async function () {
 
     captureBtn.disabled = true;
 
-    const width = video.videoWidth;
-    const height = video.videoHeight;
+    const width = 1080;
+    const height = 1920;
     const sourceWidth = video.videoWidth;
     const sourceHeight = video.videoHeight;
+    const scale = Math.min(width / sourceWidth, height / sourceHeight);
+    const drawWidth = sourceWidth * scale;
+    const drawHeight = sourceHeight * scale;
+    const drawX = (width - drawWidth) / 2;
+    const drawY = (height - drawHeight) / 2;
 
     canvas.width = width;
     canvas.height = height;
 
     const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, width, height);
 
     if (facingMode === "user") {
         ctx.save();
         ctx.translate(width, 0);
         ctx.scale(-1, 1);
-        ctx.drawImage(video, 0, 0, sourceWidth, sourceHeight);
+        ctx.drawImage(video, drawX, drawY, drawWidth, drawHeight);
         ctx.restore();
     } else {
-        ctx.drawImage(video, 0, 0, sourceWidth, sourceHeight);
+        ctx.drawImage(video, drawX, drawY, drawWidth, drawHeight);
     }
 
     const frame = document.getElementById("frame");
